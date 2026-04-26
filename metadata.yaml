@@ -3,6 +3,6 @@ display_name: QQ 视频转泡泡
 desc: 回复 QQ 群视频消息后使用 把视频转为泡泡消息。
 version: v0.1.0
 author: CatCat
-repo: ""
+repo: "https://github.com/clashcatcat/astrbot_plugin_bubble_transform"
 support_platforms:
   - aiocqhttp
