@@ -81,7 +81,7 @@ class ProtoCodec:
             nested, pos = cls._decode_message(raw, 0, len(raw))
             if pos == len(raw) and nested:
                 return nested
-        except Exception:
+        except (IndexError, ValueError):
             pass
         try:
             text = raw.decode()
@@ -118,12 +118,16 @@ class ProtoCodec:
         shift = 0
         value = 0
         while True:
+            if offset >= len(data):
+                raise ValueError("truncated varint")
             byte = data[offset]
             offset += 1
             value |= (byte & 0x7F) << shift
             if not byte & 0x80:
                 return value, offset
             shift += 7
+            if shift > 63:
+                raise ValueError("varint is too large")
 
     @staticmethod
     def _to_bytes(data: bytes | str) -> bytes:
@@ -185,6 +189,8 @@ class BubbleTransformPlugin(Star):
     async def _get_group_raw_message(self, client: Any, group_id: int, message_id: int) -> dict[str, Any]:
         msg = await client.api.call_action("get_msg", message_id=message_id)
         msg = self._unwrap_onebot_response(msg)
+        if not isinstance(msg, dict):
+            raise RuntimeError("get_msg 返回不是字典，无法读取 real_seq")
         seq = int(msg.get("real_seq") or 0)
         if not seq:
             raise RuntimeError("获取 real_seq 失败，请更新 NapCat 或确认 get_msg 返回 real_seq")
@@ -241,6 +247,9 @@ class BubbleTransformPlugin(Star):
 
     def _extract_reply_id(self, event: AstrMessageEvent) -> str | None:
         for segment in event.get_messages() or []:
+            segment_type = getattr(segment, "type", None)
+            if segment_type not in {"reply", "Reply"}:
+                continue
             reply_id = getattr(segment, "id", None)
             if reply_id:
                 return str(reply_id)
@@ -290,8 +299,28 @@ class BubbleTransformPlugin(Star):
         parts = path.split(".")
         current: Any = data
         for part in parts[:-1]:
-            current = current[part]
-        current[parts[-1]] = value
+            if isinstance(current, dict):
+                current = current[part]
+                continue
+            if isinstance(current, list) and part.isdigit():
+                idx = int(part)
+                if idx >= len(current):
+                    raise IndexError(f"path index out of range: {part}")
+                current = current[idx]
+                continue
+            raise TypeError(f"unsupported path segment for set: {part}")
+
+        last = parts[-1]
+        if isinstance(current, dict):
+            current[last] = value
+            return
+        if isinstance(current, list) and last.isdigit():
+            idx = int(last)
+            if idx >= len(current):
+                raise IndexError(f"path index out of range: {last}")
+            current[idx] = value
+            return
+        raise TypeError(f"unsupported final path segment for set: {last}")
 
     @staticmethod
     def _random_uint32() -> int:
