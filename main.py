@@ -4,7 +4,7 @@ from typing import Any
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
-from codec import ProtoCodec
+from .codec import ProtoCodec
 
 
 PLUGIN_NAME = "astrbot_plugin_bubble_transform"
