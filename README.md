@@ -1,6 +1,6 @@
 # astrbot_plugin_bubble_transform
 
-QQ / NapCat OneBot v11 专用的视频转泡泡插件。
+QQ / NapCat、LLBot OneBot v11 视频转泡泡插件。
 
 ## 用法
 
@@ -17,4 +17,6 @@ QQ / NapCat OneBot v11 专用的视频转泡泡插件。
 ## 说明
 
 - 目前支持群聊使用。
-- 需要 AstrBot 使用 OneBot v11 / `aiocqhttp` 适配器，并由 NapCat 连接 QQ。
+- 需要 AstrBot 使用 OneBot v11 / `aiocqhttp` 适配器，并由 NapCat 或 LLBot 连接 QQ。
+- NapCat 需要支持 `send_packet`；LLBot 需要支持 `send_pb`。
+- 仅支持作为“视频消息”发送的视频；作为群文件发送的 MP4 暂不支持直接转换。
